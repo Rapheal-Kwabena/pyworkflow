@@ -1,0 +1,412 @@
+Metadata-Version: 2.4
+Name: pyworkflow-framework
+Version: 0.1.0
+Summary: A lightweight, developer-friendly Python workflow automation framework.
+Author: PyWorkflow Contributors
+License: MIT
+Project-URL: Homepage, https://github.com/pyworkflow/pyworkflow
+Project-URL: Documentation, https://github.com/pyworkflow/pyworkflow#readme
+Project-URL: Issues, https://github.com/pyworkflow/pyworkflow/issues
+Keywords: workflow,automation,orchestration,pipeline,scheduler,tasks
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Classifier: Topic :: System :: Distributed Computing
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: click>=8.1
+Requires-Dist: pydantic>=2.0
+Provides-Extra: viz
+Requires-Dist: graphviz>=0.20; extra == "viz"
+Requires-Dist: networkx>=3.0; extra == "viz"
+Provides-Extra: dev
+Requires-Dist: pytest>=7.4; extra == "dev"
+Requires-Dist: pytest-cov>=4.1; extra == "dev"
+Provides-Extra: all
+Requires-Dist: pyworkflow[dev,viz]; extra == "all"
+Dynamic: license-file
+
+# PyWorkflow
+
+A lightweight, developer-friendly Python workflow automation framework — think **Airflow/Prefect/Dagster, but simple enough to learn in five minutes**.
+
+Define workflows as plain Python. Run them sequentially or in parallel. Get automatic retries, dependency resolution, scheduling, persistent history, a CLI, and a plugin system — with zero required infrastructure (no server, no database, no message broker).
+
+```python
+from pyworkflow import Workflow, Task
+
+workflow = Workflow("Data Processing")
+
+workflow.add_task(Task("Download Data", download_function))
+workflow.add_task(Task("Clean Data", clean_function, depends_on=["Download Data"]))
+workflow.add_task(Task("Analyze Data", analyze_function, depends_on=["Clean Data"]))
+
+report = workflow.run()
+print(report.success, report.results)
+```
+
+## Status
+
+**v0.1.0** — first release. The core engine (workflows, tasks, dependencies, retries, parallel execution, scheduling, storage, CLI) is stable and fully tested. Visualization and plugins are usable but considered early; see [Roadmap](#roadmap).
+
+---
+
+## Installation
+
+```bash
+pip install pyworkflow
+```
+
+Optional extras:
+
+```bash
+pip install "pyworkflow[viz]"   # graphviz/networkx-powered workflow.visualize()
+pip install "pyworkflow[dev]"   # pytest + pytest-cov for running the test suite
+```
+
+From source:
+
+```bash
+git clone https://github.com/pyworkflow/pyworkflow.git
+cd pyworkflow
+pip install -e ".[dev]"
+```
+
+---
+
+## Quick Start
+
+### 1. Define tasks as ordinary Python functions
+
+```python
+def download_data():
+    return {"rows": 1000}
+
+def clean_data(context):
+    # `context` holds the output of every completed task, keyed by task name
+    raw = context["Download"]
+    return {"rows": raw["rows"] - 10}  # drop 10 bad rows
+
+def analyze_data(context):
+    return f"Analyzed {context['Clean']['rows']} rows"
+```
+
+A task function may optionally accept a `context: dict` parameter — PyWorkflow
+detects this via introspection and injects it automatically. Tasks that don't
+need upstream data can omit it entirely.
+
+### 2. Build and run a workflow
+
+```python
+from pyworkflow import Workflow, Task
+
+workflow = Workflow("Data Processing")
+workflow.add_task(Task("Download", download_data))
+workflow.add_task(Task("Clean", clean_data, depends_on=["Download"]))
+workflow.add_task(Task("Analyze", analyze_data, depends_on=["Clean"]))
+
+report = workflow.run()
+
+if report.success:
+    print("All done:", report.results)
+else:
+    print("Failed tasks:", report.failed_tasks)
+```
+
+### 3. Or build it fluently with `.then(...)`
+
+```python
+workflow = Workflow("Data Processing")
+(
+    workflow
+    .add_task(Task("Download", download_data))
+    .then(Task("Clean", clean_data))
+    .then(Task("Analyze", analyze_data))
+)
+workflow.run()
+```
+
+---
+
+## Examples
+
+### Parallel execution
+
+Independent tasks (no shared dependency chain) run concurrently with `parallel=True`:
+
+```python
+workflow = Workflow("Fan-out", max_workers=4)
+workflow.add_task(Task("Fetch US", fetch_us))
+workflow.add_task(Task("Fetch EU", fetch_eu))
+workflow.add_task(Task("Fetch APAC", fetch_apac))
+workflow.add_task(Task("Merge", merge_regions, depends_on=["Fetch US", "Fetch EU", "Fetch APAC"]))
+
+workflow.run(parallel=True)  # the three Fetch tasks run concurrently, then Merge
+```
+
+### Retries and failure handling
+
+```python
+workflow.add_task(
+    Task(
+        "Send Email",
+        send_email,
+        retries=3,
+        retry_delay=5,          # seconds between attempts
+        continue_on_failure=True,  # don't halt the whole workflow if this fails
+        on_failure=lambda task, exc: alert_ops_team(task.name, exc),
+    )
+)
+
+report = workflow.run()
+if not report.success:
+    workflow.retry_failed_tasks()  # re-run only what failed
+```
+
+### Conditional / branching tasks
+
+```python
+workflow.add_task(Task("Check Inventory", check_inventory))
+workflow.add_task(
+    Task(
+        "Reorder Stock",
+        reorder_stock,
+        depends_on=["Check Inventory"],
+        condition=lambda context: context["Check Inventory"]["low_stock"] is True,
+    )
+)
+```
+
+### Chaining two workflows
+
+```python
+ingest = Workflow("Ingest").add_task(Task("Pull", pull_data))
+report_wf = Workflow("Report").add_task(Task("Build Report", build_report))
+
+combined = ingest.chain(report_wf)  # Report's tasks depend on Ingest's terminal tasks
+combined.run()
+```
+
+### Scheduling
+
+```python
+workflow.schedule("now")                          # run immediately
+workflow.schedule("delay", delay=30)               # run once, in 30 seconds
+workflow.schedule("interval", every=15)             # run every 15 minutes
+workflow.schedule("cron", cron="0 8 * * 1-5")        # 8am on weekdays
+workflow.schedule("daily", time="08:00")             # shorthand for daily cron
+```
+
+### Persisting workflow history
+
+```python
+from pyworkflow.storage import JSONStorage, SQLiteStorage
+
+storage = JSONStorage()  # defaults to ~/.pyworkflow/
+storage.save_workflow(workflow.to_dict())
+storage.save_run(workflow.name, {"success": report.success, "results": report.results})
+
+print(storage.list_workflows())
+print(storage.get_history(workflow.name))
+
+# Or, if you'd rather query with SQL:
+sql_storage = SQLiteStorage()  # defaults to ~/.pyworkflow/pyworkflow.db
+```
+
+### Visualization
+
+```python
+workflow.visualize()  # renders a PNG dependency graph if graphviz is installed,
+                       # otherwise prints a readable text dependency map
+```
+
+### Plugins
+
+Plugins turn common integrations into reusable `Task` factories:
+
+```python
+from pyworkflow.plugins import EmailPlugin, APIPlugin
+
+email = EmailPlugin()
+email.setup(host="smtp.example.com", username="bot@example.com", password="...")
+
+api = APIPlugin()
+api.setup(base_url="https://api.example.com", headers={"Authorization": "Bearer ..."})
+
+workflow.add_task(email.make_task("Notify", to="team@example.com", subject="Done", body="Workflow finished"))
+workflow.add_task(api.make_task("Fetch Users", path="/users", method="GET"))
+```
+
+Write your own by subclassing `pyworkflow.plugins.Plugin`.
+
+### AI-powered steps (optional)
+
+PyWorkflow doesn't hard-depend on any particular LLM SDK. Wire up whichever
+one you use via a plain `call_fn(prompt) -> str`:
+
+```python
+from pyworkflow.plugins import AIPlugin
+import anthropic
+
+client = anthropic.Anthropic()
+
+def call_claude(prompt: str) -> str:
+    msg = client.messages.create(
+        model="claude-sonnet-5",
+        max_tokens=1000,
+        messages=[{"role": "user", "content": prompt}],
+    )
+    return msg.content[0].text
+
+ai = AIPlugin()
+ai.setup(call_fn=call_claude)
+
+workflow.add_task(ai.make_task("Summarize Feedback", prompt="Summarize this customer feedback."))
+workflow.add_task(
+    ai.make_decision_task("Route Ticket", question="Which team should handle this?",
+                           choices=["billing", "engineering", "support"])
+)
+```
+
+---
+
+## Command Line Interface
+
+```bash
+pyworkflow create myworkflow      # scaffold myworkflow.py with a starter workflow
+pyworkflow run myworkflow.py      # run it (add --parallel to run independent tasks concurrently)
+pyworkflow status "My Workflow"   # show last known state from local storage
+pyworkflow history "My Workflow"  # show recent run history
+pyworkflow logs "My Workflow"     # show failures/skips from the latest run
+pyworkflow list                   # list all workflows in local storage
+```
+
+Since workflows are Python code (functions aren't serializable to JSON), the
+CLI operates on **workflow definition files** — a `.py` file exposing a
+module-level `workflow = Workflow(...)` variable, exactly like the file
+`pyworkflow create` scaffolds for you.
+
+---
+
+## API Documentation
+
+### `Workflow`
+
+| Method | Description |
+|---|---|
+| `add_task(task)` | Add a `Task`. Returns `self` for chaining. |
+| `add_tasks(tasks)` | Add multiple tasks at once. |
+| `then(task)` | Add a task that depends on the most recently added one. |
+| `chain(other_workflow)` | Combine two workflows; returns a new `Workflow`. |
+| `run(parallel=False)` | Execute the workflow. Returns an `ExecutionReport`. |
+| `retry_failed_tasks(parallel=False)` | Re-run only tasks left in `FAILED` state. |
+| `cancel()` / `pause()` / `resume()` | Lifecycle control (in-process). |
+| `reset()` | Reset workflow and all tasks to their initial state. |
+| `schedule(mode, ...)` | Schedule via the shared background `Scheduler`. |
+| `visualize()` | Render/print the dependency graph. |
+| `summary()` / `to_dict()` | Structured status snapshots. |
+
+### `Task`
+
+Key constructor arguments: `name`, `function`, `description`, `args`, `kwargs`,
+`retries`, `retry_delay`, `timeout`, `depends_on`, `condition`, `on_failure`,
+`continue_on_failure`. See docstrings in `pyworkflow/core/task.py` for full
+details.
+
+### States
+
+```
+WorkflowState: CREATED, RUNNING, COMPLETED, FAILED, CANCELLED, PAUSED
+TaskState:     PENDING, RUNNING, COMPLETED, FAILED, SKIPPED, RETRYING, CANCELLED
+```
+
+### `ExecutionReport`
+
+```python
+report.success        # bool
+report.results        # dict[task_name, output]
+report.failed_tasks    # list[str]
+report.skipped_tasks   # list[str]
+report.error           # first exception encountered, if any
+```
+
+---
+
+## Architecture
+
+```
+pyworkflow/
+├── core/
+│   ├── task.py          # Task, TaskState, TaskResult — a single unit of work
+│   ├── workflow.py       # Workflow, WorkflowState — composition & orchestration API
+│   └── engine.py         # Engine — topological execution (sequential/parallel)
+├── scheduler/
+│   ├── scheduler.py       # background-thread scheduler (now/delay/interval/cron)
+│   └── cron.py             # dependency-free 5-field cron parser/matcher
+├── storage/
+│   ├── base.py              # StorageBackend interface
+│   ├── json_storage.py       # local JSON files (default, zero setup)
+│   └── sqlite_storage.py      # SQLite backend for queryable history
+├── plugins/
+│   ├── base.py                 # Plugin base class + PluginRegistry
+│   ├── email.py, database.py, api.py, ai.py   # built-in Task factories
+├── visualization/
+│   └── graph.py                 # graphviz-based rendering with text fallback
+├── cli/
+│   └── main.py                    # `pyworkflow` command line entry point
+└── exceptions/
+    └── __init__.py                  # PyWorkflowError hierarchy
+```
+
+**Design principles:**
+- **Core has zero required third-party dependencies** beyond `click` (for the CLI). Everything else (`graphviz`, DB drivers, LLM SDKs) is optional and only imported when you use that feature.
+- **The dependency graph is the source of truth.** `Engine` computes execution order via a topological sort (Kahn's algorithm), so sequential and parallel execution share identical semantics — parallelism only changes *how* independent tasks run, never *what* runs.
+- **Context is immutable per task.** Each task receives a snapshot `dict` of prior outputs; tasks can't accidentally mutate what other tasks see mid-run.
+- **Storage is pluggable.** `JSONStorage` and `SQLiteStorage` both implement the same `StorageBackend` interface — swap one for the other without touching workflow code.
+
+---
+
+## Testing
+
+```bash
+pip install -e ".[dev]"
+pytest
+```
+
+The test suite covers workflow creation/composition, sequential and parallel
+task execution, dependency validation (missing deps, cycles), retries and
+failure callbacks, the scheduler and cron matcher, both storage backends, and
+the CLI.
+
+---
+
+## Roadmap
+
+Planned for future releases, with the architecture already designed to support them:
+
+- Web dashboard for real-time monitoring
+- Distributed / cloud workers (beyond in-process threads)
+- Kubernetes-native workflow execution
+- Real-time execution event streaming
+- A workflow marketplace / template library
+- An AI-assisted workflow builder
+
+## Contributing
+
+1. Fork the repo and create a feature branch.
+2. Add tests for any new behavior (`tests/`).
+3. Run `pytest` and make sure everything passes.
+4. Follow PEP 8 and keep type hints on public functions.
+5. Open a pull request describing the change and why it's needed.
+
+Bug reports and feature requests are welcome via GitHub Issues.
+
+## License
+
+MIT — see [LICENSE](LICENSE).

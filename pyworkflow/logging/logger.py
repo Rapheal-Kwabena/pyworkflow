@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import Any
+
 
 class JSONFormatter(logging.Formatter):
     """Custom formatter to output logs as structured JSON lines."""

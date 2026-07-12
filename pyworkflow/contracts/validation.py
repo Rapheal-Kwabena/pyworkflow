@@ -65,7 +65,7 @@ def validate_inputs(
                 val = bound.arguments.get(param_name)
                 bound.arguments[param_name] = ta.validate_python(val)
                 return bound.args, bound.kwargs
-            
+
             # Fallback to validating the first positional argument
             if args:
                 validated_arg = ta.validate_python(args[0])
@@ -118,7 +118,7 @@ def validate_signature_types(
     # validate_call validates the inputs when called.
     # We call a dummy function or use it to raise ValidationError early.
     try:
-        wrapped = validate_call(func)
+        validate_call(func)
         # Check if it raises validation error
         # Note: calling this would actually execute the function, so we don't call it here.
         # Instead, we validate the parameters using validate_call's internal validator if possible,

@@ -1,0 +1,13 @@
+click>=8.1
+pydantic>=2.0
+
+[all]
+pyworkflow[dev,viz]
+
+[dev]
+pytest>=7.4
+pytest-cov>=4.1
+
+[viz]
+graphviz>=0.20
+networkx>=3.0

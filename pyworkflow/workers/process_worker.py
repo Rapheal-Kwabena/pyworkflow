@@ -7,14 +7,11 @@ import os
 import sys
 import time
 import traceback
-from typing import Any, TYPE_CHECKING
+from typing import Any
 
 from pyworkflow.core.state import TaskState
 from pyworkflow.core.task import TaskResult
 from pyworkflow.workers.worker import Worker
-
-if TYPE_CHECKING:
-    from pyworkflow.core.task import Task
 
 
 def _run_in_process_target(

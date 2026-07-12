@@ -115,7 +115,7 @@ class Task:
     def _call(self, context: dict) -> Any:
         """Call the underlying function, injecting dependencies or ``context``, and performing validations."""
         import inspect
-        from pyworkflow.contracts.validation import validate_inputs, validate_output, validate_signature_types
+        from pyworkflow.contracts.validation import validate_inputs, validate_output
 
         try:
             sig = inspect.signature(self.function)
@@ -123,13 +123,13 @@ class Task:
             return self.function(*self.args, **self.kwargs)
 
         params = list(sig.parameters.values())
-        
+
         # Build arguments to pass
         call_args = list(self.args)
         call_kwargs = dict(self.kwargs)
-        
+
         positional_params_filled = len(self.args)
-        
+
         unfilled_params = []
         for i, p in enumerate(params):
             if p.name == "context":
@@ -163,7 +163,7 @@ class Task:
 
         if self.input_model:
             call_args, call_kwargs = validate_inputs(self.input_model, sig, call_args, call_kwargs)
-        
+
         if self.validate_types:
             from pydantic import validate_call
             wrapped = validate_call(self.function)
@@ -175,7 +175,6 @@ class Task:
             result = validate_output(self.output_model, result)
 
         return result
-
 
     def run(self, context: dict) -> TaskResult:
         """Execute the task (with retries) inside a process-isolated worker, returning a :class:`TaskResult`.
@@ -231,7 +230,6 @@ class Task:
                     time.sleep(self.retry_delay)
                     continue
 
-
         self.state = TaskState.FAILED
         last_exc = self.history[-1].exception if (self.history and self.history[-1].exception) else Exception(self.error or f"Task {self.name} failed")
         if self.on_failure is not None:
@@ -240,7 +238,6 @@ class Task:
             except Exception:
                 pass
         raise TaskExecutionError(self.name, last_exc)
-
 
     def execute(self) -> Any:
         """Execute task standalone, returning output or raising original exception."""

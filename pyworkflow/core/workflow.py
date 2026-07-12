@@ -84,10 +84,8 @@ class Workflow:
 
         if auto_chain and not task.depends_on and self._order:
             task.depends_on.append(self._order[-1])
-
         self.add_task(task)
         return self
-
 
     def add_tasks(self, tasks: list[Task]) -> "Workflow":
         for t in tasks:
@@ -161,14 +159,12 @@ class Workflow:
             for dep in task.depends_on:
                 in_degree[name] += 1
                 dependents[dep].append(name)
-
         levels: list[list[str]] = []
         remaining = dict(in_degree)
         placed = 0
         current = [n for n, d in remaining.items() if d == 0]
         # preserve insertion order within a level
         current.sort(key=lambda n: self._order.index(n))
-
         while current:
             levels.append(current)
             placed += len(current)
@@ -180,7 +176,6 @@ class Workflow:
                         next_level.append(dependent)
             next_level.sort(key=lambda n: self._order.index(n))
             current = next_level
-
         if placed != len(self.tasks):
             raise DependencyError(f"Workflow '{self.name}' contains a dependency cycle")
         return levels
@@ -190,7 +185,6 @@ class Workflow:
         """Execute the workflow. If ``parallel`` is True, independent tasks
         (as determined by the dependency graph) run concurrently."""
         from pyworkflow.logging.logger import logger
-
         if self.state == WorkflowState.RUNNING:
             raise WorkflowStateError(f"Workflow '{self.name}' is already running")
         self.validate()
@@ -198,22 +192,18 @@ class Workflow:
         self.started_at = time.time()
         self.context = {}
         import os
-
         self.pid = os.getpid()
         logger.info(
             f"Workflow '{self.name}' started (PID: {self.pid})",
             extra={"workflow_name": self.name},
         )
-
         try:
             report = self._engine.execute(parallel=parallel)
         finally:
             self.pid = None
-
         self.finished_at = time.time()
         duration = self.finished_at - self.started_at
         self.state = WorkflowState.COMPLETED if report.success else WorkflowState.FAILED
-
         if report.success:
             logger.info(
                 f"Workflow '{self.name}' completed successfully in {duration:.4f}s",
@@ -229,7 +219,6 @@ class Workflow:
             for fail_cb in self._on_failure:
                 fail_cb(self, report.error or Exception("Workflow failed"))
         return report
-
 
     def retry_failed_tasks(self, parallel: bool = False) -> ExecutionReport:
         """Re-run only tasks currently in FAILED state (and anything that
@@ -312,7 +301,6 @@ class Workflow:
                 every = float(args[0])
             elif mode == "delay" and delay is None:
                 delay = float(args[0])
-
 
         from pyworkflow.scheduler.scheduler import Scheduler
 

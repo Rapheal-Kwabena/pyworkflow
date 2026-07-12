@@ -1,0 +1,2 @@
+[console_scripts]
+pyworkflow = pyworkflow.cli.main:main
