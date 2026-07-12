@@ -19,7 +19,7 @@ class ProcessExecutor:
 
         that manage subprocess execution.
         """
-        outcomes = {}
+        outcomes: dict[str, Any] = {}
         task_names_list = list(task_names)
         limit = min(self.max_workers, len(task_names_list))
         if limit <= 0:

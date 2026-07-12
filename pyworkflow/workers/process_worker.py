@@ -34,7 +34,7 @@ def _run_in_process_target(
         )
 
         sig = inspect.signature(func)
-        call_args = list(args)
+        call_args: tuple = tuple(args)
         call_kwargs = dict(kwargs)
 
         params = list(sig.parameters.values())
@@ -202,6 +202,14 @@ class ProcessWorker(Worker):
             return TaskResult(
                 state=TaskState.FAILED,
                 error=f"ProcessWorkerCrashError: Process worker crashed with exit code {exitcode}",
+                started_at=started,
+                finished_at=finished,
+            )
+
+        if result is None:
+            return TaskResult(
+                state=TaskState.FAILED,
+                error="ProcessWorkerCrashError: No result received from process",
                 started_at=started,
                 finished_at=finished,
             )

@@ -125,7 +125,7 @@ class Task:
         params = list(sig.parameters.values())
 
         # Build arguments to pass
-        call_args = list(self.args)
+        call_args: tuple = tuple(self.args)
         call_kwargs = dict(self.kwargs)
 
         positional_params_filled = len(self.args)

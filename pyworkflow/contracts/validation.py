@@ -34,10 +34,7 @@ def validate_inputs(
                     bound.arguments[param_name] = validated_val
                     return bound.args, bound.kwargs
                 except ValidationError as e:
-                    raise ValidationError.from_exception_data(
-                        title=f"Task Input Validation Error for single model parameter '{param_name}'",
-                        line_errors=e.errors(),
-                    ) from e
+                    raise e
 
         # Case 2: Validate the whole argument mapping as fields of the Pydantic model
         # e.g., input_model defines fields name and age, and task takes name and age
@@ -49,11 +46,7 @@ def validate_inputs(
                     bound.arguments[field_name] = getattr(validated_model, field_name)
             return bound.args, bound.kwargs
         except ValidationError as e:
-            # Let's customize the validation exception with context
-            raise ValidationError.from_exception_data(
-                title=f"Task Input Validation Error against model {input_model.__name__}",
-                line_errors=e.errors(),
-            ) from e
+            raise e
     else:
         # Standard types (non-BaseModel subclasses) validated via TypeAdapter
         try:
@@ -71,10 +64,7 @@ def validate_inputs(
                 validated_arg = ta.validate_python(args[0])
                 return (validated_arg,) + args[1:], kwargs
         except ValidationError as e:
-            raise ValidationError.from_exception_data(
-                title=f"Task Input Validation Error against type {input_model}",
-                line_errors=e.errors(),
-            ) from e
+            raise e
 
     return args, kwargs
 
@@ -89,18 +79,12 @@ def validate_output(output_model: Type[Any], result: Any) -> Any:
                 return output_model.model_validate(result)
             return output_model.model_validate(result)
         except ValidationError as e:
-            raise ValidationError.from_exception_data(
-                title=f"Task Output Validation Error against model {output_model.__name__}",
-                line_errors=e.errors(),
-            ) from e
+            raise e
     else:
         try:
             return TypeAdapter(output_model).validate_python(result)
         except ValidationError as e:
-            raise ValidationError.from_exception_data(
-                title=f"Task Output Validation Error against type {output_model}",
-                line_errors=e.errors(),
-            ) from e
+            raise e
 
 
 def validate_signature_types(
