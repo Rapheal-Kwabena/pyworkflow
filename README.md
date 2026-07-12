@@ -26,20 +26,20 @@ print(report.success, report.results)
 ## Installation
 
 ```bash
-pip install pyworkflow
+pip install pyworkflow-framework
 ```
 
 Optional extras:
 
 ```bash
-pip install "pyworkflow[viz]"   # graphviz/networkx-powered workflow.visualize()
-pip install "pyworkflow[dev]"   # pytest + pytest-cov for running the test suite
+pip install "pyworkflow-framework[viz]"   # graphviz/networkx-powered workflow.visualize()
+pip install "pyworkflow-framework[dev]"   # pytest + pytest-cov for running the test suite
 ```
 
 From source:
 
 ```bash
-git clone https://github.com/pyworkflow/pyworkflow.git
+git clone https://github.com/Rapheal-Kwabena/pyworkflow.git
 cd pyworkflow
 pip install -e ".[dev]"
 ```

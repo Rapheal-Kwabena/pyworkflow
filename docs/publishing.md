@@ -53,7 +53,7 @@ Before uploading to the real index, it is highly recommended to upload your pack
 2. **Test Installation**:
    Verify you can install it in a clean virtual environment:
    ```bash
-   python3 -m pip install --index-url https://test.pypi.org/simple/ --no-deps pyworkflow
+   python3 -m pip install --index-url https://test.pypi.org/simple/ --no-deps pyworkflow-framework
    ```
 
 ---

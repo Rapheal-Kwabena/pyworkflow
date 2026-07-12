@@ -8,7 +8,7 @@ By participating, you agree to uphold our [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Getting Started
 
-1. **Fork the Repository**: Create a fork of `pyworkflow/pyworkflow` on GitHub.
+1. **Fork the Repository**: Create a fork of `Rapheal-Kwabena/pyworkflow` on GitHub.
 2. **Clone Locally**: Clone your fork to your development environment:
    ```bash
    git clone https://github.com/<your-username>/pyworkflow.git
@@ -22,7 +22,7 @@ By participating, you agree to uphold our [Code of Conduct](CODE_OF_CONDUCT.md).
 4. **Install Dependencies**: Install the package along with development extras:
    ```bash
    pip install -r requirements.txt
-   pip install -e .[all]
+   pip install -e ".[all]"
    ```
 
 ## Development Workflow

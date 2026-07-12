@@ -1,7 +1,7 @@
 click>=8.1
 pydantic>=2.0
 
-# Optional extras (install separately, or via `pip install pyworkflow[viz,dev]`)
+# Optional extras (install separately, or via `pip install pyworkflow-framework[viz,dev]`)
 # graphviz>=0.20      # workflow.visualize() with rendered images
 # networkx>=3.0        # advanced graph analysis
 # pytest>=7.4           # running the test suite
