@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  pyworkflow:
+    build: .
+    volumes:
+      - .:/app
+      - pyworkflow_data:/app/data
+    environment:
+      - PYWORKFLOW_DB_PATH=/app/data/pyworkflow.db
+    command: --help
+
+volumes:
+  pyworkflow_data:
