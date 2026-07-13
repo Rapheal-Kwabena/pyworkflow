@@ -29,7 +29,7 @@ Provides-Extra: dev
 Requires-Dist: pytest>=7.4; extra == "dev"
 Requires-Dist: pytest-cov>=4.1; extra == "dev"
 Provides-Extra: all
-Requires-Dist: pyworkflow[dev,viz]; extra == "all"
+Requires-Dist: pyworkflow-framework[dev,viz]; extra == "all"
 Dynamic: license-file
 
 # PyWorkflow

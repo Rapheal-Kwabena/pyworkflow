@@ -31,7 +31,7 @@ dependencies = [
 [project.optional-dependencies]
 viz = ["graphviz>=0.20", "networkx>=3.0"]
 dev = ["pytest>=7.4", "pytest-cov>=4.1"]
-all = ["pyworkflow[viz,dev]"]
+all = ["pyworkflow-framework[viz,dev]"]
 
 [project.urls]
 Homepage = "https://github.com/pyworkflow/pyworkflow"

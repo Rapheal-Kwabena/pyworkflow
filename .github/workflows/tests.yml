@@ -40,7 +40,7 @@ jobs:
 
     - name: Run Tests
       run: |
-        pytest --cov=pyworkflow
+        python3 -m pytest --cov=pyworkflow
 
     - name: Build Package
       run: |

@@ -2,7 +2,7 @@ click>=8.1
 pydantic>=2.0
 
 [all]
-pyworkflow[dev,viz]
+pyworkflow-framework[dev,viz]
 
 [dev]
 pytest>=7.4
