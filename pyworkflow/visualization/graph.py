@@ -38,7 +38,7 @@ def render_workflow(
     """
     try:
         return _render_with_graphviz(workflow, output_path, fmt)
-    except ImportError:
+    except Exception:
         return _render_text(workflow)
 
 

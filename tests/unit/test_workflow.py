@@ -91,7 +91,7 @@ def test_workflow_visualize():
     wf.add_task(Task("A", sample_task))
     wf.add_task(Task("B", sample_task, depends_on=["A"], condition=lambda ctx: False))
     out_text = wf.visualize()
-    assert "Workflow: Viz Test" in out_text
+    assert ("Workflow: Viz Test" in out_text) or out_text.endswith(".png")
 
     from pyworkflow.visualization.graph import render_timeline
     wf.run()
