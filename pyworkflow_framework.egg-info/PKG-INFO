@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: pyworkflow-framework
-Version: 0.1.1
+Version: 0.1.2
 Summary: A lightweight, developer-friendly Python workflow automation framework.
 Author: PyWorkflow Contributors
 License: MIT
@@ -28,6 +28,7 @@ Requires-Dist: networkx>=3.0; extra == "viz"
 Provides-Extra: dev
 Requires-Dist: pytest>=7.4; extra == "dev"
 Requires-Dist: pytest-cov>=4.1; extra == "dev"
+Requires-Dist: pytest-benchmark>=4.0; extra == "dev"
 Provides-Extra: all
 Requires-Dist: pyworkflow-framework[dev,viz]; extra == "all"
 Dynamic: license-file
