@@ -223,11 +223,11 @@ class ProcessWorker(Worker):
                 finished_at=finished,
             )
         else:
-            exc, tb = err_info
+            proc_exc, tb = err_info
             return TaskResult(
                 state=TaskState.FAILED,
-                error=f"{type(exc).__name__}: {exc}\nTraceback:\n{tb}" if tb else f"{type(exc).__name__}: {exc}",
+                error=f"{type(proc_exc).__name__}: {proc_exc}\nTraceback:\n{tb}" if tb else f"{type(proc_exc).__name__}: {proc_exc}",
                 started_at=started,
                 finished_at=finished,
-                exception=exc,
+                exception=proc_exc,
             )
